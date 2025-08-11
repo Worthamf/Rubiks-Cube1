@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Virtual Rubik's Cube</title>
+<script type="module">
+  import "https://cdn.cubing.net/v0/js/cubing/twisty";
+</script>
+<style>
+  html, body {
+    margin:0;
+    height:100%;
+    background:#111;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-family:sans-serif;
+  }
+  twisty-player {
+    width:min(95vw,600px);
+    height:min(95vh,600px);
+  }
+  .controls { margin-top:10px; }
+  input { width:60px; text-align:center; }
+  button {
+    padding:8px 14px;
+    margin:0 5px;
+    border:none;
+    background:#444;
+    color:white;
+    border-radius:6px;
+    font-size:14px;
+  }
+  button:hover { background:#666; }
+</style>
+</head>
+<body>
+  <h2>Virtual Rubik's Cube</h2>
+  <twisty-player id="player"
+    puzzle="3x3x3"
+    control-panel="none"
+    background="none"
+    visualization="3D">
+  </twisty-player>
+  <div class="controls">
+    <label>Scramble length:
+      <input type="number" id="moves" value="25" min="1" max="200">
+    </label>
+    <button id="scramble">Scramble</button>
+    <button id="solve">Solve</button>
+    <button id="reset">Reset</button>
+  </div>
+
+<script>
+customElements.whenDefined('twisty-player').then(() => {
+  const FACES = ["U","D","L","R","F","B"];
+  const MODS = ["", "'", "2"];
+
+  function generateScramble(n = 25) {
+    const out = [];
+    let prev = null;
+    for (let i = 0; i < n; i++) {
+      let f;
+      do { f = FACES[Math.floor(Math.random()*6)]; } while (f === prev);
+      out.push(f + MODS[Math.floor(Math.random()*3)]);
+      prev = f;
+    }
+    return out.join(" ");
+  }
+
+  function invertAlg(a="") {
+    return a.trim().split(/\s+/).reverse().map(m=>{
+      if (m.endsWith("2")) return m;
+      if (m.endsWith("'")) return m.slice(0,-1);
+      return m + "'";
+    }).join(" ");
+  }
+
+  const player = document.getElementById("player");
+  const movesInput = document.getElementById("moves");
+  const btnScramble = document.getElementById("scramble");
+  const btnSolve = document.getElementById("solve");
+  const btnReset = document.getElementById("reset");
+
+  let lastScramble = "";
+
+  btnScramble.onclick = () => {
+    const n = Math.max(1, Math.min(200, parseInt(movesInput.value)||25));
+    lastScramble = generateScramble(n);
+    player.setAttribute("experimental-setup-alg", lastScramble);
+    player.alg = "";
+  };
+
+  btnSolve.onclick = () => {
+    if (!lastScramble) return;
+    player.setAttribute("experimental-setup-alg", lastScramble);
+    const solution = invertAlg(lastScramble);
+    player.alg = solution;
+    player.playbackPosition = 0;
+    player.play();
+  };
+
+  btnReset.onclick = () => {
+    lastScramble = "";
+    player.setAttribute("experimental-setup-alg", "");
+    player.alg = "";
+  };
+});
+</script>
+</body>
+</html>
